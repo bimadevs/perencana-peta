@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Penjelajah Peta Interaktif</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://maps.gstatic.com; connect-src 'self' https://maps.googleapis.com https://maps.gstatic.com;"> -->
+    <link rel="stylesheet" href="/index.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^0.7.0"
+        }
+      }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <!-- Main container for the map and related UI elements -->
+    <div id="map-container" class="map-container">
+      <div id="map"></div>
+
+      <!-- Loading indicator overlay for the map -->
+      <div id="map-loader" class="hidden">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Container for search elements positioned at the top -->
+      <div class="search-container">
+        <!-- Toggle switch for enabling/disabling Day Planner Mode -->
+        <div class="mode-toggle">
+          <label class="switch">
+            <input type="checkbox" id="planner-mode-toggle" />
+            <span class="slider round"></span>
+          </label>
+          <span class="mode-label">Mode Perencana Harian</span>
+        </div>
+
+        <div class="search-bar">
+          <i class="fas fa-search search-icon"></i>
+          <textarea
+            id="prompt-input"
+            placeholder="Jelajahi tempat, sejarah, acara, atau rute..."
+          ></textarea>
+          <button id="generate" class="search-button">
+            <i class="fas fa-arrow-right"></i>
+            <div class="spinner"></div>
+          </button>
+        </div>
+
+        <div class="error" id="error-message"></div>
+      </div>
+
+      <!-- Carousel for displaying location cards at the bottom -->
+      <div class="card-carousel">
+        <div class="card-container" id="card-container">
+          <!-- Location cards will be dynamically inserted here by the script -->
+        </div>
+        <div class="carousel-controls">
+          <button class="carousel-arrow prev" id="prev-card">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <div class="carousel-indicators" id="carousel-indicators">
+            <!-- Indicator dots will be added dynamically -->
+          </div>
+          <button class="carousel-arrow next" id="next-card">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Button to reset the map and clear current results -->
+      <button id="reset" class="reset-button">
+        <i class="fas fa-undo"></i>
+      </button>
+    </div>
+
+    <!-- Semi-transparent overlay displayed when timeline is open on mobile -->
+    <div class="map-overlay" id="map-overlay"></div>
+
+    <!-- Sliding panel for displaying the day plan timeline -->
+    <div class="timeline-container" id="timeline-container">
+      <!-- Button to toggle timeline visibility on mobile -->
+      <button id="timeline-toggle" class="timeline-toggle">
+        <i class="fas fa-calendar-alt"></i>
+      </button>
+
+      <div class="timeline-header">
+        <h3>Rencana Harian Anda</h3>
+        <div class="timeline-actions">
+          <button id="export-plan" class="export-button">
+            <i class="fas fa-download"></i> Ekspor
+          </button>
+          <button id="close-timeline" class="close-button">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div class="timeline" id="timeline">
+        <!-- Timeline items representing the day plan will be inserted here -->
+      </div>
+    </div>
+
+    <!-- Tutorial Popup -->
+    <div id="tutorial-overlay" class="tutorial-overlay hidden">
+      <div class="tutorial-modal">
+        <div id="tutorial-step-1" class="tutorial-step active">
+          <i class="fas fa-map-marked-alt tutorial-icon"></i>
+          <h2>Selamat Datang!</h2>
+          <p>
+            Ini adalah Penjelajah Peta Interaktif. Mari kita lihat cara
+            kerjanya dalam beberapa langkah mudah.
+          </p>
+        </div>
+
+        <div id="tutorial-step-2" class="tutorial-step">
+          <i class="fas fa-keyboard tutorial-icon"></i>
+          <h2>1. Mulai Menjelajah</h2>
+          <p>
+            Ketik permintaan apa pun di bilah pencarian. Misalnya, "tunjukkan
+            piramida kuno" atau "rute napak tilas The Beatles di London".
+          </p>
+        </div>
+
+        <div id="tutorial-step-3" class="tutorial-step">
+          <i class="fas fa-calendar-check tutorial-icon"></i>
+          <h2>2. Buat Rencana Harian</h2>
+          <p>
+            Aktifkan "Mode Perencana Harian" untuk membuat jadwal perjalanan
+            lengkap dari pagi hingga malam, lengkap dengan waktu dan
+            transportasi.
+          </p>
+        </div>
+
+        <div id="tutorial-step-4" class="tutorial-step">
+          <i class="fas fa-hand-pointer tutorial-icon"></i>
+          <h2>3. Berinteraksi dengan Peta</h2>
+          <p>
+            Hasilnya akan muncul di peta. Klik kartu di bagian bawah untuk
+            melihat detail setiap lokasi dan memusatkan peta padanya.
+          </p>
+        </div>
+
+        <div id="tutorial-step-5" class="tutorial-step">
+          <i class="fas fa-stream tutorial-icon"></i>
+          <h2>4. Lihat Linimasa Anda</h2>
+          <p>
+            Saat dalam Mode Perencana, buka linimasa untuk melihat jadwal
+            perjalanan Anda secara rinci.
+          </p>
+        </div>
+
+        <div id="tutorial-step-6" class="tutorial-step">
+          <i class="fas fa-check-circle tutorial-icon"></i>
+          <h2>Siap Menjelajah?</h2>
+          <p>
+            Anda sudah siap! Klik tombol di bawah untuk memulai petualangan
+            Anda.
+          </p>
+        </div>
+
+        <div class="tutorial-navigation">
+          <button id="tutorial-prev" class="tutorial-button secondary">
+            Kembali
+          </button>
+          <div id="tutorial-dots"></div>
+          <button id="tutorial-next" class="tutorial-button">Berikutnya</button>
+          <button id="tutorial-finish" class="tutorial-button hidden">
+            Mulai
+          </button>
+        </div>
+        <button id="tutorial-skip" class="tutorial-skip-button">Lewati</button>
+      </div>
+    </div>
+    <!-- End of Tutorial Popup -->
+
+    <!-- Google Maps JavaScript API script -->
+    <script>
+      // Script to load the Google Maps JavaScript API asynchronously.
+      ((g) => {
+        var h,
+          a,
+          k,
+          p = "The Google Maps JavaScript API",
+          c = "google",
+          l = "importLibrary",
+          q = "__ib__",
+          m = document,
+          b = window;
+        b = b[c] || (b[c] = {});
+        var d = b.maps || (b.maps = {}),
+          r = new Set(),
+          e = new URLSearchParams(),
+          u = () =>
+            h ||
+            (h = new Promise(async (f, n) => {
+              await (a = m.createElement("script"));
+              e.set("libraries", [...r] + "");
+              for (k in g)
+                e.set(
+                  k.replace(/[A-Z]/g, (t) => "_" + t[0].toLowerCase()),
+                  g[k],
+                );
+              e.set("callback", c + ".maps." + q);
+              a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
+              d[q] = f;
+              a.onerror = () => (h = n(Error(p + " could not load.")));
+              a.nonce = m.querySelector("script[nonce]")?.nonce || "";
+              m.head.append(a);
+            }));
+        d[l]
+          ? console.warn(p + " only loads once. Ignoring:", g)
+          : (d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)));
+      })({ key: "AIzaSyDRPIDUknWMrK4EC-Wdj1YBwuEBzsVUtWc", v: "weekly" });
+    </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
