@@ -1,15 +1,11 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 // Fix: Declare google to resolve 'Cannot find name 'google'' errors throughout the file.
 declare const google: any;
 
 import {FunctionDeclaration, GoogleGenAI, Type} from '@google/genai';
-
-const {Map} = await google.maps.importLibrary('maps');
-const {LatLngBounds} = await google.maps.importLibrary('core');
-const {AdvancedMarkerElement} = await google.maps.importLibrary('marker');
 
 // Application state variables
 let map; // Holds the Google Map instance
@@ -22,6 +18,9 @@ let activeCardIndex = 0; // Index of the currently selected location card
 let isPlannerMode = false; // Flag to indicate if Day Planner mode is active
 let dayPlanItinerary = []; // Array to hold structured items for the day plan timeline
 let mapLoaderCount = 0; // Counter for managing map loader visibility
+
+// Google Maps API variables - will be initialized asynchronously
+let Map, LatLngBounds, AdvancedMarkerElement;
 
 // DOM Element references
 const generateButton = document.querySelector('#generate');
@@ -149,7 +148,24 @@ function updateTutorialView() {
 // Initializes the Google Map instance and necessary libraries.
 async function initMap() {
   showMapLoader();
-  bounds = new LatLngBounds();
+
+  // Initialize Google Maps libraries asynchronously
+  try {
+    const mapsLibrary = await google.maps.importLibrary('maps');
+    const coreLibrary = await google.maps.importLibrary('core');
+    const markerLibrary = await google.maps.importLibrary('marker');
+
+    // Assign to global variables for use throughout the app
+    Map = mapsLibrary.Map;
+    LatLngBounds = coreLibrary.LatLngBounds;
+    AdvancedMarkerElement = markerLibrary.AdvancedMarkerElement;
+
+    bounds = new LatLngBounds();
+  } catch (error) {
+    console.error('Failed to load Google Maps libraries:', error);
+    hideMapLoader();
+    return;
+  }
 
   map = new Map(document.getElementById('map'), {
     center: {lat: -34.397, lng: 150.644}, // Default center

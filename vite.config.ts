@@ -1,7 +1,6 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 
-
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
@@ -18,6 +17,20 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        target: 'esnext',
+        rollupOptions: {
+          output: {
+            manualChunks: undefined,
+          }
+        }
+      },
+      optimizeDeps: {
+        include: ['@google/genai']
+      },
+      esbuild: {
+        target: 'esnext'
       }
     };
 });
