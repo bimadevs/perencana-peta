@@ -7,7 +7,7 @@
 </div>
 
 <div align="center">
-  <h1>🗺️ Penjelajah Peta Interaktif</h1>
+  <h1>🗺️ perencana Peta Interaktif</h1>
   <p><strong>Aplikasi pemetaan cerdas dengan AI yang membantu Anda menjelajahi tempat-tempat menarik dan membuat rencana perjalanan harian</strong></p>
 </div>
 
